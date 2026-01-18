@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiveM Gehstock Script | Lester Animation + OX Inventory</title>
+  <meta name="description" content="FiveM Gehstock Script mit Lester-Animation, OX Inventory Support und Auto-Handling (verschwindet beim Einsteigen)." />
+
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:#0f1621;
+      --card2:#111b28;
+      --text:#eaf2ff;
+      --muted:#a9b7cc;
+      --line:#223149;
+      --accent:#7CFF6B;
+      --accent2:#37a6ff;
+      --danger:#ff5d5d;
+      --shadow: 0 20px 60px rgba(0,0,0,.55);
+      --radius: 18px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:radial-gradient(1200px 800px at 20% -10%, rgba(55,166,255,.15), transparent 60%),
+                                 radial-gradient(900px 700px at 100% 10%, rgba(124,255,107,.12), transparent 55%),
+                                 var(--bg);
+              color:var(--text);
+              font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+    }
+
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1100px;margin:0 auto;padding:28px 18px 60px}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 16px;border:1px solid rgba(255,255,255,.06);
+      background:rgba(15,22,33,.75);backdrop-filter: blur(10px);
+      border-radius:999px; position:sticky; top:14px; z-index:9;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px;
+    }
+    .badge{
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(124,255,107,.25);
+      background: rgba(124,255,107,.08);
+      color: var(--accent);
+      font-weight:700;
+      font-size:12px;
+    }
+    nav{display:flex;gap:10px;flex-wrap:wrap}
+    .navlink{
+      padding:9px 12px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.06);
+      color:var(--muted);
+      font-weight:600;
+      font-size:13px;
+      transition:.2s;
+    }
+    .navlink:hover{border-color:rgba(124,255,107,.25);color:var(--text);transform:translateY(-1px)}
+
+    .hero{
+      margin-top:22px;
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:18px;
+      align-items:stretch;
+    }
+
+    @media (max-width: 900px){
+      .hero{grid-template-columns:1fr}
+      .topbar{position:static;border-radius:var(--radius)}
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(17,27,40,.95), rgba(15,22,33,.85));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .heroLeft{
+      padding:26px 24px;
+      position:relative;
+      overflow:hidden;
+    }
+    .heroLeft::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(700px 240px at 10% 20%, rgba(124,255,107,.12), transparent 60%),
+                  radial-gradient(800px 320px at 90% 20%, rgba(55,166,255,.10), transparent 62%);
+      pointer-events:none;
+    }
+    .heroTitle{
+      position:relative;
+      margin:0 0 10px;
+      font-size:42px;
+      line-height:1.06;
+      letter-spacing:-.7px;
+    }
+    .heroSub{
+      position:relative;
+      margin:0 0 16px;
+      color:var(--muted);
+      font-size:15.5px;
+      line-height:1.55;
+      max-width:62ch;
+    }
+
+    .pillRow{
+      position:relative;
+      display:flex;flex-wrap:wrap;gap:10px;
+      margin:16px 0 20px;
+    }
+    .pill{
+      display:flex; align-items:center; gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+      color: var(--muted);
+      font-weight:700;
+      font-size:12.5px;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(124,255,107,.12);
+    }
+    .dot.blue{background:var(--accent2); box-shadow:0 0 0 5px rgba(55,166,255,.12)}
+    .dot.red{background:var(--danger); box-shadow:0 0 0 5px rgba(255,93,93,.12)}
+
+    .ctaRow{
+      position:relative;
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .btn{
+      cursor:pointer;
+      border:none;
+      border-radius:14px;
+      padding:12px 14px;
+      font-weight:900;
+      letter-spacing:.2px;
+      transition:.15s;
+      display:inline-flex; align-items:center; gap:10px;
+      user-select:none;
+    }
+    .btnPrimary{
+      background: linear-gradient(135deg, rgba(124,255,107,.95), rgba(55,166,255,.75));
+      color:#05100a;
+      box-shadow: 0 12px 28px rgba(124,255,107,.15);
+    }
+    .btnPrimary:hover{transform:translateY(-2px);filter:saturate(1.1)}
+    .btnGhost{
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      color: var(--text);
+    }
+    .btnGhost:hover{transform:translateY(-2px);border-color:rgba(124,255,107,.25)}
+    .btnSmall{
+      padding:9px 11px;border-radius:12px;font-weight:800;font-size:13px;
+    }
+
+    .heroRight{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .statGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    .stat{
+      padding:14px 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+    }
+    .stat .k{color:var(--muted);font-weight:800;font-size:12px}
+    .stat .v{font-weight:900;font-size:18px;margin-top:3px}
+    .stat .v span{color:var(--accent)}
+
+    .codeBox{
+      padding:14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.06);
+      background: #0a1019;
+      overflow:auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12.5px;
+      line-height:1.45;
+      color:#dbe7ff;
+      position:relative;
+    }
+    .codeHead{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:10px;color:var(--muted);font-weight:800;font-size:12px;
+    }
+    .copyToast{
+      position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+      background: rgba(15,22,33,.92);
+      border:1px solid rgba(255,255,255,.08);
+      padding:10px 12px;border-radius:999px;
+      color:var(--text);
+      font-weight:800;
+      display:none;
+      box-shadow: 0 18px 40px rgba(0,0,0,.55);
+      z-index:99;
+    }
+
+    section{margin-top:18px}
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
+    @media (max-width: 900px){
+      .grid2{grid-template-columns:1fr}
+    }
+
+    .secTitle{
+      margin:0 0 10px;
+      font-size:18px;
+      letter-spacing:-.2px;
+    }
+    .secText{margin:0;color:var(--muted);line-height:1.6}
+
+    .featureList{display:grid; gap:10px; margin-top:12px}
+    .feature{
+      display:flex; gap:12px; align-items:flex-start;
+      padding:12px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+    }
+    .ico{
+      width:36px;height:36px;border-radius:14px;
+      display:grid;place-items:center;
+      border:1px solid rgba(124,255,107,.25);
+      background: rgba(124,255,107,.08);
+      flex:0 0 auto;
+    }
+    .feature h4{margin:0 0 2px;font-size:14px}
+    .feature p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5}
+
+    .footer{
+      margin-top:20px;
+      color:var(--muted);
+      text-align:center;
+      font-size:12.5px;
+      padding:16px;
+    }
+
+    .hr{height:1px;background:rgba(255,255,255,.06);margin:12px 0;border:0}
+
+    .faq{
+      padding:18px;
+    }
+    details{
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+      border-radius:16px;
+      padding:12px 12px;
+    }
+    details summary{
+      cursor:pointer;
+      font-weight:900;
+      color:var(--text);
+    }
+    details p{
+      margin:10px 0 0;
+      color:var(--muted);
+      line-height:1.55;
+      font-size:13.5px;
+    }
+
+    .tag{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+      color:var(--muted);
+      font-weight:800;font-size:12px;
+      margin-right:8px;
+      margin-top:8px;
+    }
+    .tag strong{color:var(--text)}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header class="topbar">
+      <div class="brand">
+        <span style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:12px;background:rgba(124,255,107,.12);border:1px solid rgba(124,255,107,.25)">
+          <!-- cane icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M14 5a3 3 0 0 0-3 3v10a3 3 0 1 0 6 0V11"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M11 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>FiveM <span style="color:var(--accent)">Gehstock</span> Script</span>
+        <span class="badge">OX Ready</span>
+      </div>
+
+      <nav>
+        <a class="navlink" href="#features">Features</a>
+        <a class="navlink" href="#install">Installation</a>
+        <a class="navlink" href="#download">Download</a>
+        <a class="navlink" href="#faq">FAQ</a>
+      </nav>
+    </header>
+
+    <main class="hero">
+      <!-- LEFT -->
+      <div class="card heroLeft">
+        <h1 class="heroTitle">Gehstock Script mit <span style="color:var(--accent)">Lester Animation</span> &amp; <span style="color:var(--accent2)">OX Inventory</span></h1>
+        <p class="heroSub">
+          Ein simples, cleanes Script für FiveM: Gehstock als Item im <strong>ox_inventory</strong>, passende Lauf-Animation (Lester-Style),
+          und der Gehstock <strong>verschwindet automatisch</strong>, sobald du ins Fahrzeug einsteigst.
+        </p>
+
+        <div class="pillRow">
+          <div class="pill"><span class="dot"></span> Lester Animation</div>
+          <div class="pill"><span class="dot blue"></span> ox_inventory kompatibel</div>
+          <div class="pill"><span class="dot red"></span> Auto-Handling (Hide on enter)</div>
+        </div>
+
+        <div class="ctaRow" id="download">
+          <button class="btn btnPrimary" id="downloadBtn">
+            <!-- download icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3v10" stroke="#05100a" stroke-width="2" stroke-linecap="round"/>
+              <path d="M8 11l4 4 4-4" stroke="#05100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 19h16" stroke="#05100a" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Download (Demo)
+          </button>
+
+          <a class="btn btnGhost" href="#install">
+            <!-- wrench icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M21 7a5 5 0 0 1-6 4.9L9 18l-3 0 0-3 6.1-6A5 5 0 0 1 21 7Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Installation ansehen
+          </a>
+
+          <button class="btn btnGhost btnSmall" id="discordBtn" title="Optional: Discord Button">
+            <!-- chat icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Discord
+          </button>
+        </div>
+
+        <hr class="hr"/>
+
+        <div class="tag"><strong>Version:</strong> v1.0.0</div>
+        <div class="tag"><strong>Framework:</strong> Standalone</div>
+        <div class="tag"><strong>Support:</strong> ox_lib / ox_inventory</div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="card heroRight">
+        <div class="statGrid">
+          <div class="stat">
+            <div class="k">Item</div>
+            <div class="v"><span>gehstock</span></div>
+          </div>
+          <div class="stat">
+            <div class="k">Animation</div>
+            <div class="v">Lester Walk</div>
+          </div>
+          <div class="stat">
+            <div class="k">Autos</div>
+            <div class="v">Auto-Hide ✅</div>
+          </div>
+          <div class="stat">
+            <div class="k">Inventar</div>
+            <div class="v">OX ✅</div>
+          </div>
+        </div>
+
+        <div class="codeBox" id="install">
+          <div class="codeHead">
+            <span>Quick Setup</span>
+            <button class="btn btnGhost btnSmall" id="copyCmd">Kopieren</button>
+          </div>
+          <div id="cmdText">
+            1) Ressourcenordner: resources/[scripts]/gehstock/<br/>
+            2) server.cfg: <strong>ensure gehstock</strong><br/>
+            3) ox_inventory Item hinzufügen (siehe unten)<br/>
+            4) Fertig ✅
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <section class="grid2" id="features">
+      <div class="card" style="padding:18px 18px;">
+        <h2 class="secTitle">🔥 Features</h2>
+        <p class="secText">
+          Fokus auf „einfach funktioniert“: Gehstock per Item nutzen, Animation aktiv, und sauberer Zustand beim Vehicle-Enter/Exit.
+        </p>
+
+        <div class="featureList">
+          <div class="feature">
+            <div class="ico">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M6 14l3 3 9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h4>Lester-Style Animation</h4>
+              <p>Passende „Gehstock / Humpel-Bewegung“ (Lester-ähnlich) während das Item aktiv ist.</p>
+            </div>
+          </div>
+
+          <div class="feature">
+            <div class="ico" style="border-color:rgba(55,166,255,.35); background:rgba(55,166,255,.10)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <h4>OX Inventory kompatibel</h4>
+              <p>Gehstock ist ein normales ox_inventory Item – easy benutzbar und sauber integrierbar.</p>
+            </div>
+          </div>
+
+          <div class="feature">
+            <div class="ico" style="border-color:rgba(255,93,93,.35); background:rgba(255,93,93,.10)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M7 12l3-3M7 12l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M17 12l-3-3M17 12l-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h4>Verschwindet beim Einsteigen ins Auto</h4>
+              <p>Sobald du in ein Vehicle gehst, wird der Gehstock automatisch „deaktiviert“ (kein Clip, kein Bug-State).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:18px 18px;">
+        <h2 class="secTitle">🧩 ox_inventory Item Beispiel</h2>
+        <p class="secText">Hier ein Beispiel, wie du das Item eintragen kannst.</p>
+
+        <div class="codeBox" style="margin-top:12px;">
+<pre style="margin:0;white-space:pre-wrap;">
+-- ox_inventory/data/items.lua (Beispiel)
+['gehstock'] = {
+  label = 'Gehstock',
+  weight = 600,
+  stack = false,
+  close = true,
+  description = 'Ein stabiler Gehstock. Ideal für RP-Laufen.',
+  client = {
+    event = 'gehstock:use'
+  }
+}
+</pre>
+        </div>
+
+        <div class="ctaRow" style="margin-top:12px">
+          <button class="btn btnGhost btnSmall" id="copyItem">Item Code kopieren</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card faq" id="faq">
+      <h2 class="secTitle">❓ FAQ</h2>
+      <div style="display:grid;gap:10px;margin-top:10px">
+        <details>
+          <summary>Ist das Script Standalone?</summary>
+          <p>Ja. Es ist für „Plug & Play“ gedacht – du brauchst nur ox_inventory (und optional ox_lib).</p>
+        </details>
+
+        <details>
+          <summary>Was passiert, wenn man ins Auto einsteigt?</summary>
+          <p>Beim Vehicle-Enter wird der Gehstock automatisch „ausgeschaltet“, damit nichts in der Hand buggt.</p>
+        </details>
+
+        <details>
+          <summary>Kann ich den Item-Namen ändern?</summary>
+          <p>Ja. Wenn du <code>gehstock</code> umbenennst, musst du die Namen in ox_inventory + Script anpassen.</p>
+        </details>
+
+        <details>
+          <summary>Kann ich den Download Button mit meiner ZIP verlinken?</summary>
+          <p>Ja. Ersetze in der Datei einfach den Fake-Download durch einen echten Link (z.B. GitHub Release oder Direct Link).</p>
+        </details>
+      </div>
+    </section>
+
+    <footer class="footer">
+      © <span id="year"></span> • Gehstock Script • Made for FiveM • <span style="color:var(--accent)">OX</span> Compatible
+    </footer>
+
+    <div class="copyToast" id="toast">✅ Kopiert!</div>
+  </div>
+
+  <script>
+    // Year
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Tiny toast
+    const toast = document.getElementById("toast");
+    function showToast(msg="✅ Kopiert!"){
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(()=> toast.style.display="none", 1500);
+    }
+
+    // Copy helpers
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast("✅ Kopiert!");
+      }catch(e){
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        showToast("✅ Kopiert!");
+      }
+    }
+
+    // Copy setup text
+    document.getElementById("copyCmd").addEventListener("click", ()=>{
+      const plain =
+`1) Ressourcenordner: resources/[scripts]/gehstock/
+2) server.cfg: ensure gehstock
+3) ox_inventory Item hinzufügen (siehe Item Beispiel)
+4) Fertig ✅`;
+      copyText(plain);
+    });
+
+    // Copy item example
+    document.getElementById("copyItem").addEventListener("click", ()=>{
+      const item =
+`['gehstock'] = {
+  label = 'Gehstock',
+  weight = 600,
+  stack = false,
+  close = true,
+  description = 'Ein stabiler Gehstock. Ideal für RP-Laufen.',
+  client = {
+    event = 'gehstock:use'
+  }
+}`;
+      copyText(item);
+    });
+
+    // Discord button (placeholder)
+    document.getElementById("discordBtn").addEventListener("click", ()=>{
+      showToast("💬 Discord-Link eintragen!");
+      // Hier kannst du deinen Link einfügen:
+      // window.open("https://discord.gg/DEININVITE", "_blank");
+    });
+
+    // DEMO download: erstellt eine kleine Readme als Download
+    // -> Ersetz das später durch deine echte ZIP/Release URL.
+    document.getElementById("downloadBtn").addEventListener("click", ()=>{
+      const readme =
+`Gehstock Script (Demo Download)
+--------------------------------
+Dieses File ist nur ein Platzhalter-Download.
+
+Ersetze den Download Button in index.html durch:
+- GitHub Release Link
+- Direct link zur ZIP
+- Tebex / Forum Link
+
+Features:
+- Lester Walk Animation
+- OX Inventory Item Support
+- Verschwindet beim Einsteigen ins Auto
+
+Viel Spaß!`;
+      const blob = new Blob([readme], {type:"text/plain"});
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "gehstock_readme.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+      showToast("⬇️ Demo-Download gestartet");
+    });
+  </script>
+</body>
+</html>
